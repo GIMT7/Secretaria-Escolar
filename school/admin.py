@@ -1,5 +1,5 @@
 from django.contrib import admin
-from school.models import Guardian, Student, Professor, Contract, Class
+from school.models import Guardian, Student, Professor, Contract, Class, Matter, Grade
 from django.http import HttpResponseRedirect
 from django.utils.html import format_html
 from django.urls import path
@@ -15,7 +15,7 @@ class StudentsAdmin(admin.ModelAdmin):
         "adress",
         "cpf",
         "birthday",
-        "class_choice",
+        "class_choice",      
     )
     list_display_links = (
         "full_name",
@@ -59,6 +59,7 @@ class ProfessorsAdmin(admin.ModelAdmin):
         "birthday",
         "adress",
         "class_choice",
+        "matter_choice",
     )
     list_display_links = (
         "full_name",
@@ -129,6 +130,38 @@ class ClassesAdmin(admin.ModelAdmin):
     )
     list_filter = ("itinerary_choices",)
 
+class MattersAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "matter_choices",
+
+    )
+    list_display_links = (
+        "matter_choices",
+    )
+    search_fields = (
+        "matter_choices",
+    )
+    list_filter = ("matter_choices",)
+
+
+
+class GradesAdmin(admin.ModelAdmin):
+    list_display = (
+        "student",
+        "classs",
+        "matter",
+        "grade_presence",
+        "grade_activity",
+        "grade_evaluative",  # Corrected field name
+        "grade_final",
+    )
+    search_fields = (
+        "student__full_name",  # Corrected to reference the related field
+        "classs__class_choices",  # Corrected to reference the related field
+        "matter__matter_choices",  # Corrected to reference the related field
+    )
+    list_filter = ("classs", "matter",)  # Corrected field name
 
 admin.site.register(
     Guardian,
@@ -153,4 +186,12 @@ admin.site.register(
 admin.site.register(
     Class,
     ClassesAdmin,
+)
+admin.site.register(
+    Matter,
+    MattersAdmin,
+)
+admin.site.register(
+    Grade,
+    GradesAdmin,
 )

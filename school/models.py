@@ -1,7 +1,8 @@
 from django.db import models
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
-from .validators import cep_validator, cpf_validator, phone_validator
+from .validators import cep_validator, cpf_validator, phone_validator, validate_nota
+from django.core.validators import FileExtensionValidator
 
 
 class Class(models.Model):
@@ -22,13 +23,25 @@ class Class(models.Model):
         ("CN", "Ciencias da Natureza"),
         ("JG", "Desenvolvimento de Jogos"),
     )
-
-    class_choices = models.CharField(max_length=50, choices=CLASS_CHOICES)
-    itinerary_choices = models.CharField(max_length=50, choices=ITINERARY_CHOICES)
-
+ 
+    class_choices = models.CharField(max_length=50, choices=CLASS_CHOICES, blank=False, null=True,)
+    itinerary_choices = models.CharField(max_length=50, choices=ITINERARY_CHOICES, blank=False, null=True,)
+  
     def __str__(self):
         return f"{self.get_class_choices_display()} - {self.get_itinerary_choices_display()}"
 
+class Matter(models.Model):
+   
+    MATTER_CHOICES = (
+        ("CH", "Ciencias Humanas"),
+        ("L", "Linguagens"),
+        ("M", "Matematica"),
+        ("CN", "Ciencias da Natureza"),
+    )
+    matter_choices = models.CharField(max_length=50, choices=MATTER_CHOICES, blank=False, null=True,)
+
+    def __str__(self):
+        return f"{self.get_matter_choices_display()}"
 
 class Student(models.Model):
     full_name = models.CharField(
@@ -60,6 +73,7 @@ class Student(models.Model):
         blank=False,
         null=True,
     )
+
 
     def __str__(self):
         return self.full_name
@@ -122,6 +136,14 @@ class Professor(models.Model):
         blank=False,
         null=True,
     )
+    matter_choice = models.ForeignKey(
+        Matter,
+        on_delete=models.CASCADE,
+        verbose_name="Student's matter",
+        related_name="professor_matter",
+        blank=False,
+        null=True,
+    )
 
     def __str__(self):
         return self.full_name
@@ -144,6 +166,13 @@ class Contract(models.Model):
         related_name="contract_student",
         blank=False,
         null=True,
+    )
+
+    uploaded_pdf = models.FileField(
+        upload_to="contracts/",
+        null=True,
+        blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=["pdf"])]
     )
 
     def generate_contract_pdf(self):
@@ -176,3 +205,66 @@ class Contract(models.Model):
 
     def __str__(self):
         return f"Contract for {self.student.full_name} and {self.guardian.full_name}"
+
+
+class Grade(models.Model):
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        verbose_name="student",
+        related_name="grade_student",
+        blank=False,
+        null=True,
+    )
+
+    classs = models.ForeignKey(
+        Class,
+        on_delete=models.CASCADE,
+        verbose_name="class",
+        related_name="grade_class",
+        blank=False,
+        null=True,
+    )
+    matter = models.ForeignKey(
+        Matter,
+        on_delete=models.CASCADE,
+        verbose_name="matter",
+        related_name="grade_matter",
+        blank=False,
+        null=True,
+    )
+    grade_presence = models.FloatField(
+         verbose_name="Grade of Presence",
+         default=0,
+         validators=[validate_nota],
+    )
+    grade_activity = models.FloatField(
+         verbose_name="Grade of Activity",
+         default=0,
+         validators=[validate_nota],
+    )
+    grade_evaluative = models.FloatField(
+         verbose_name="Grade of Evaluative",
+         default=0,
+         validators=[validate_nota],
+    )
+    grade_final = models.FloatField(
+         verbose_name="Final Grade",
+         default=0,
+         validators=[validate_nota],
+         editable=False
+    )
+    class Meta:
+        unique_together = (
+            "student",
+            "classs",
+            "matter",
+        )
+    
+    def save(self, *args, **kwargs):
+        self.grade_final = (
+            self.grade_presence + self.grade_activity + self.grade_evaluative
+        ) / 3
+        super().save(*args, **kwargs)
+    def __str__(self):
+        return f"Grades for {self.student.full_name} in {self.classs} - {self.matter}"

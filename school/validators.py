@@ -34,3 +34,10 @@ def phone_validator(value):
             ("%(value)s is not valid"),
             params={"value": value},
         )
+
+
+def validate_nota(value):
+    if not (0 <= value <= 10):
+        raise ValidationError(
+            f"Nota inválida: {value}. A nota deve estar entre 0 e 10."
+        )
