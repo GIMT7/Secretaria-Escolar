@@ -23,7 +23,7 @@ class Class(models.Model):
         ("CN", "Ciencias da Natureza"),
         ("JG", "Desenvolvimento de Jogos"),
     )
-    # Campo para a turma
+    # Campo para a turma #test
     class_choices = models.CharField(max_length=50, choices=CLASS_CHOICES, blank=False, null=True,)
     # Campo para o itinerário
     itinerary_choices = models.CharField(max_length=50, choices=ITINERARY_CHOICES, blank=False, null=True,)
